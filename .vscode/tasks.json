@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open Backend Terminal",
+      "type": "shell",
+      "command": "powershell",
+      "options": {
+        "cwd": "E:\\SSO\\SSO_Backend\\backend"
+      },
+      "presentation": {
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Open Frontend Terminal",
+      "type": "shell",
+      "command": "powershell",
+      "options": {
+        "cwd": "E:\\SSO\\SSO_Frontend\\frontend"
+      },
+      "presentation": {
+        "panel": "new"
+      }
+    }
+  ]
+}
