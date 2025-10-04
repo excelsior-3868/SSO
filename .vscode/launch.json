@@ -14,7 +14,7 @@
             "django": true,
             "justMyCode": false,
             "env": {
-                "DJANGO_SETTINGS_MODULE": "SSO.settings"
+                "DJANGO_SETTINGS_MODULE": "backend.settings"
             }
         }
     ]
