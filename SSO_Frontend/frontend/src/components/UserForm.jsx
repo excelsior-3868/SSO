@@ -5,7 +5,6 @@ const UserForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [perms, setPerms] = useState({ dms: false, pms: false });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -13,77 +12,83 @@ const UserForm = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    const permissions = [];
-    if (perms.dms) permissions.push('dms');
-    if (perms.pms) permissions.push('pms');
     try {
       await axios.post('http://localhost:8000/api/users/', 
-        { username, password, is_admin: isAdmin, permissions }, 
+        { username, password, is_admin: isAdmin }, 
         { withCredentials: true }
       );
       setSuccess('User created successfully');
       setUsername('');
       setPassword('');
       setIsAdmin(false);
-      setPerms({ dms: false, pms: false });
     } catch (err) {
       setError('Failed to create user');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-4 p-4 bg-gray-100 rounded">
-      <h3 className="text-xl mb-4 font-bold">Create New User</h3>
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-      {success && <p className="text-green-500 mb-2">{success}</p>}
-      <div className="mb-2">
-        <label className="block text-sm font-medium">Username</label>
-        <input 
-          type="text" 
-          placeholder="Username" 
-          value={username} 
-          onChange={e => setUsername(e.target.value)} 
-          className="block w-full p-2 border rounded" 
-        />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+          {success}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Username
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter username" 
+            value={username} 
+            onChange={e => setUsername(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Password
+          </label>
+          <input 
+            type="password" 
+            placeholder="Enter password" 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            required
+          />
+        </div>
+        
+        <div className="flex items-center">
+          <input 
+            type="checkbox" 
+            checked={isAdmin} 
+            onChange={e => setIsAdmin(e.target.checked)} 
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label className="ml-2 block text-sm text-gray-700">
+            Admin privileges
+          </label>
+        </div>
       </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium">Password</label>
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password} 
-          onChange={e => setPassword(e.target.value)} 
-          className="block w-full p-2 border rounded" 
-        />
+      
+      <div className="flex justify-end">
+        <button 
+          type="submit" 
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
+        >
+          Create User
+        </button>
       </div>
-      <label className="block mb-2">
-        <input 
-          type="checkbox" 
-          checked={isAdmin} 
-          onChange={e => setIsAdmin(e.target.checked)} 
-          className="mr-2" 
-        />
-        Admin
-      </label>
-      <label className="block mb-2">
-        <input 
-          type="checkbox" 
-          checked={perms.dms} 
-          onChange={e => setPerms({...perms, dms: e.target.checked})} 
-          className="mr-2" 
-        />
-        DMS Access
-      </label>
-      <label className="block mb-2">
-        <input 
-          type="checkbox" 
-          checked={perms.pms} 
-          onChange={e => setPerms({...perms, pms: e.target.checked})} 
-          className="mr-2" 
-        />
-        PMS Access
-      </label>
-      <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Create User</button>
     </form>
   );
 };

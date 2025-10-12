@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
+import EditUsers from './pages/EditUsers';
 import UserDashboard from './pages/UserDashboard';
 import PrivateRoute from './routes/PrivateRoutes';
 import AdminRoute from './routes/AdminRoute';
@@ -21,6 +22,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/edit-users"
+            element={
+              <AdminRoute>
+                <EditUsers />
               </AdminRoute>
             }
           />

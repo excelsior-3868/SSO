@@ -6,6 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(),tailwindcss()],
   server: {
+    '/api': {
+        target: 'http://web:8000',   // 'web' = service name of Django in docker-compose
+        changeOrigin: true,
+      },
     port: 5173,   // 👈 fixed port
     strictPort: true, // 👈 ensures Vite fails if port is taken (optional)
   },
