@@ -42,7 +42,9 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'auth_app/templates',  # Add this line
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -133,3 +135,14 @@ CORS_ALLOW_CREDENTIALS = True
 RATELIMIT_ENABLE = True
 
 AUTH_USER_MODEL = 'auth_app.User'  # Add this if using custom User
+
+# Email configuration (for development, using console backend)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# For production, you would use:
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = f'NT SSO System <{EMAIL_HOST_USER}>'

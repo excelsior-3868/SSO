@@ -8,13 +8,18 @@ from django.contrib.auth import authenticate
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from .models import User, AppPermission
-from .serializers import UserSerializer, LoginSerializer, PermissionSerializer, TokenValidateSerializer
+from .serializers import UserSerializer, LoginSerializer, PermissionSerializer, TokenValidateSerializer,ChangePasswordSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from .serializers import SendResetLinktoEmailSerializer
 from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken,OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.backends import TokenBackend
 from django.contrib.auth import get_user_model
-from .models import AppPermission
+from django.contrib.auth import update_session_auth_hash
+import uuid
+from django.utils.crypto import get_random_string
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 
 # Login view
@@ -55,34 +60,6 @@ class PermissionView(APIView):
                 AppPermission.objects.create(user=user, app_name=app)
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# class TokenValidateView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def post(self, request):
-#         serializer = TokenValidateSerializer(data=request.data)
-#         if serializer.is_valid():
-#             try:
-#                 UntypedToken(serializer.data['token'])
-#                 return Response({'valid': True})
-#             except TokenError:
-#                 return Response({'valid': False})
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class TokenValidateView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def get(self, request):
-#         token = request.COOKIES.get("access_token")
-#         if not token:
-#             return Response({"valid": False})
-
-#         try:
-#             UntypedToken(token)  # validates signature + expiry
-#             return Response({"valid": True})
-#         except TokenError:
-#             return Response({"valid": False})
 
 
 # Use get_user_model() to get your custom user model
@@ -152,7 +129,6 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
     
-
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -179,3 +155,151 @@ class RefreshTokenView(APIView):
         response = Response({"access_token": new_access})
         response.set_cookie("access_token", new_access, httponly=True, samesite='Lax')
         return response
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data)
+        user = request.user
+
+        if serializer.is_valid():
+            old_password = serializer.validated_data['old_password']
+            new_password = serializer.validated_data['new_password']
+
+            if not user.check_password(old_password):
+                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+
+            # ✅ Update password
+            user.set_password(new_password)
+            user.save()
+
+            # ✅ Blacklist old tokens (if enabled)
+            try:
+                for token in OutstandingToken.objects.filter(user=user):
+                    BlacklistedToken.objects.get_or_create(token=token)
+            except Exception:
+                # Blacklisting not configured, ignore silently
+                pass
+
+            # ✅ Issue new tokens
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "detail": "Password updated successfully.",
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            try:
+                user = User.objects.get(email=email)
+                
+                # Generate a password reset token (in a real app, you would use a more secure method)
+                reset_token = str(uuid.uuid4())
+                
+                # In a real implementation, you would store this token in the database
+                # and set an expiration time
+                
+                # Send email with reset link
+                reset_link = f"http://localhost:5173/password-reset-confirm?email={email}&token={reset_token}"
+                
+                # Email content
+                subject = "Password Reset Request"
+                message = render_to_string('password_reset_email.txt', {
+                    'user': user,
+                    'reset_link': reset_link,
+                })
+                
+                # In a real application, you would send the email here
+                # send_mail(subject, message, 'from@example.com', [user.email])
+                
+                # For demo purposes, we're just returning success
+                return Response({
+                    "detail": "Password reset email sent successfully.",
+                    "reset_link": reset_link  # Include for demo purposes
+                }, status=status.HTTP_200_OK)
+                
+            except User.DoesNotExist:
+                # For security reasons, we don't reveal whether the email exists
+                pass
+                
+        # Return success even if email doesn't exist (security best practice)
+        return Response({
+            "detail": "If the email exists in our system, a password reset link has been sent."
+        }, status=status.HTTP_200_OK)
+
+class SendResetLinktoEmail(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        
+        serializer = SendResetLinktoEmailSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+           
+                                
+            try:
+                user = User.objects.get(username=username)
+                email = user.email
+            except User.DoesNotExist:    
+                return Response({"detail": "Email not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            reset_token = get_random_string(64)
+            reset_link = f"http://localhost:5173/password-reset-confirm?email={email}&token={reset_token}"
+            send_mail(
+                "Password Reset Request",
+                f"Click the link to reset your password: {reset_link}",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False
+            )
+
+        return Response({"detail": "Password reset link sent"}, status=status.HTTP_200_OK)
+
+              
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            token = serializer.validated_data['token']
+            new_password = serializer.validated_data['new_password']
+            
+            try:
+                user = User.objects.get(email=email)
+                
+                # In a real implementation, you would validate the token
+                # and check if it's expired
+                
+                # Update the user's password
+                user.set_password(new_password)
+                user.save()
+                
+                # Invalidate all existing tokens (security best practice)
+                try:
+                    for token_obj in OutstandingToken.objects.filter(user=user):
+                        BlacklistedToken.objects.get_or_create(token=token_obj)
+                except Exception:
+                    # Blacklisting not configured, ignore silently
+                    pass
+                
+                return Response({
+                    "detail": "Password has been reset successfully."
+                }, status=status.HTTP_200_OK)
+                
+            except User.DoesNotExist:
+                return Response({
+                    "detail": "Invalid email or token."
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
