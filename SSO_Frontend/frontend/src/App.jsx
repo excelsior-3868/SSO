@@ -4,9 +4,13 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import EditUsers from './pages/EditUsers';
 import UserDashboard from './pages/UserDashboard';
+import ChangePassword from './pages/ChangePassword';
+import PasswordReset from './pages/PasswordReset';
+import PasswordResetConfirm from './pages/PasswordResetConfirm';
 import PrivateRoute from './routes/PrivateRoutes';
 import AdminRoute from './routes/AdminRoute';
 import UserRoute from './routes/UserRoute';
+import PublicRoute from './routes/PublicRoute';
 
 function App() {
   return (
@@ -15,6 +19,25 @@ function App() {
         <Routes>
           {/* Login page */}
           <Route path="/" element={<Login />} />
+          
+
+          {/* Public routes */}
+          <Route
+            path="/password-reset"
+            element={
+              <PublicRoute>
+                <PasswordReset />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/password-reset-confirm"
+            element={
+              <PublicRoute>
+                <PasswordResetConfirm />
+              </PublicRoute>
+            }
+          />
 
           {/* Protected routes */}
           <Route
@@ -39,6 +62,14 @@ function App() {
               <UserRoute>
                 <UserDashboard />
               </UserRoute>
+            }
+          />
+          <Route
+            path="/change-password"
+            element={
+              <PrivateRoute>
+                <ChangePassword />
+              </PrivateRoute>
             }
           />
         </Routes>

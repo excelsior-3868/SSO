@@ -48,11 +48,11 @@ const Login = () => {
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="bg-slate-600 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <img src="react.svg" alt="Logo" className="w-8 h-8 object-contain" />
+          <div className="bg-white-600 text-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <img src="NtLogo.webp" alt="Logo" className="w-30 h-30 object-contain" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Welcome To Auth Server
+            Welcome To SSO Server
           </h2>
         </div>
 
@@ -124,7 +124,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-slate-900 text-white py-2 rounded-lg hover:bg-slate-700 transition duration-300 font-medium ${
+            className={`w-full bg-blue-700 text-white py-2 rounded-lg hover:bg-blue-800 transition duration-300 font-medium ${
               loading ? "opacity-70 cursor-not-allowed" : ""
             }`}
           >

@@ -2,7 +2,6 @@ import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-
 export const AuthContext = createContext();
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,7 +11,33 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch current user with optional retry
+  // 🔒 List of public paths that should never trigger logout or redirects
+  const PUBLIC_PATHS = ["/", "/password-reset", "/password-reset-confirm"];
+
+  // Utility: check if current path is public
+  const isPublicPath = () => {
+    const current = window.location.pathname;
+    return PUBLIC_PATHS.some((path) => current.startsWith(path));
+  };
+
+  // ✅ Safe logout function
+  const logout = async (redirect = true) => {
+    try {
+      await axios.post(`${API_BASE_URL}/api/logout/`, {}, { withCredentials: true });
+    } catch {
+      console.warn("Logout failed (probably already logged out)");
+    }
+
+    setUser(null);
+    setPermissions([]);
+
+    // Only redirect if not already on a public page
+    if (redirect && !isPublicPath()) {
+      navigate("/");
+    }
+  };
+
+  // ✅ Fetch current user with optional retry and public route awareness
   const fetchCurrentUser = async (retry = true) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/current_user/`, {
@@ -21,7 +46,7 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     } catch (err) {
       if (err.response?.status === 401 && retry) {
-        // Attempt refresh token
+        // Attempt to refresh token
         try {
           const refreshRes = await axios.post(
             `${API_BASE_URL}/api/refresh/`,
@@ -32,14 +57,20 @@ export const AuthProvider = ({ children }) => {
             return fetchCurrentUser(false);
           }
         } catch {
-          logout();
+          // ❗Do NOT redirect if the user is on a public page
+          if (!isPublicPath()) {
+            await logout();
+          } else {
+            setUser(null);
+            setPermissions([]);
+          }
         }
       }
       throw err;
     }
   };
 
-  // Login function
+  // ✅ Login function
   const login = async (username, password) => {
     try {
       await axios.post(
@@ -53,25 +84,13 @@ export const AuthProvider = ({ children }) => {
       setPermissions(currentUser.permissions || []);
 
       // Redirect based on role
-      navigate(currentUser.is_admin ? "/admin" : "/dashboard");
+      navigate(currentUser.is_admin ? "/admin" : "/user");
     } catch (err) {
       throw err;
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await axios.post(`${API_BASE_URL}/api/logout/`, {}, { withCredentials: true });
-    } catch {
-      console.warn("Logout failed");
-    }
-    setUser(null);
-    setPermissions([]);
-    navigate("/");
-  };
-
-  // Auto-check current user on app load
+  // ✅ Auto-check current user on app load
   useEffect(() => {
     (async () => {
       try {
@@ -87,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     })();
   }, []);
 
-  // Convenience flags
+  // ✅ Convenience flags
   const isAdmin = user?.is_admin || false;
   const isLoggedIn = !!user;
 

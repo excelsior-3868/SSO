@@ -3,6 +3,9 @@ import axios from 'axios';
 
 const UserForm = () => {
   const [username, setUsername] = useState('');
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
@@ -14,12 +17,14 @@ const UserForm = () => {
     setSuccess('');
     try {
       await axios.post('http://localhost:8000/api/users/', 
-        { username, password, is_admin: isAdmin }, 
+        { first_name,last_name,username, password,email, is_admin: isAdmin }, 
         { withCredentials: true }
       );
       setSuccess('User created successfully');
       setUsername('');
       setPassword('');
+      setFirstName('');
+      setLastName('');
       setIsAdmin(false);
     } catch (err) {
       setError('Failed to create user');
@@ -39,7 +44,33 @@ const UserForm = () => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Staff Name
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter Staff Name" 
+            value={first_name} 
+            onChange={e => setFirstName(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            required
+          />
+        </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Staff ID
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter Staff ID" 
+            value={last_name} 
+            onChange={e => setLastName(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            required
+          />
+        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Username
@@ -53,7 +84,19 @@ const UserForm = () => {
             required
           />
         </div>
-        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter Email" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            required
+          />
+        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Password
